@@ -1,0 +1,10 @@
+updates/
+updates
+releases/
+releases
+20*/
+20*.*
+Makefile
+*.iso
+~*.*
+*.db
