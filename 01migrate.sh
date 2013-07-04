@@ -20,14 +20,14 @@ fi
 
 # Database protection
 read -p """
-The old database will be deleted permanently!
-Are you sure to migrate to the new database? [y/N]""" ans
+The destination database will be deleted permanently!
+Are you sure to migrate to the new database? [y/N] """ ans
 if [[ x"$ans" != x"y" && x"$ans" != x"Y" ]]; then
     echo "Migration aborted!"
     exit 0
 fi
 
-# Remove old database
+# Remove the destination database
 rm -rf $i_new_db
 
 # MIGRATION
@@ -55,5 +55,9 @@ INSERT INTO packages
         enew.packages.arch = iold.packages.arch
 ;
 EOC
+
+echo
+echo "Finished!"
+echo
 
 # ex: et ts=4 sw=4

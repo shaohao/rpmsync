@@ -1,6 +1,6 @@
 # vim:ts=4:sw=4
 
-RELEASEVER=18
+RELEASEVER=19
 BASEARCH=x86_64
 
 # HTTP URL for 'http' mode
