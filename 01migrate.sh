@@ -4,7 +4,7 @@
 
 # check arguments
 if [[ $# -lt 3 ]]; then
-    echo "USAGE: ./migrate.sh new_everything_db old_db new_db"
+    echo "USAGE: $0 new_everything_db old_db new_db"
     exit -1
 fi
 

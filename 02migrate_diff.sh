@@ -5,7 +5,7 @@
 
 # check arguments
 if [[ $# -lt 2 ]]; then
-    echo "USAGE: ./migrate_diff.sh new_fedora_db new_everything_db"
+    echo "USAGE: $0 new_fedora_db new_everything_db"
     exit -1
 fi
 
@@ -15,7 +15,7 @@ e_new_db=$2
 cat <<EOC >dl.sh
 #!/bin/bash
 
-RELEASEVER=19
+RELEASEVER=20
 BASEARCH=x86_64
 
 REMOTE=http://dl.fedoraproject.org/pub/fedora/linux
