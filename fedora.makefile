@@ -8,35 +8,36 @@ REMOTE=http://dl.fedoraproject.org/pub/fedora/linux
 REMOTE_ALT={http://mirrors.163.com/fedora,http://mirrors.sohu.com/fedora,http://mirrors.kernel.org/fedora}
 LOCAL=~ftp/pub/fedora/linux
 UPDATES=updates/$(RELEASEVER)/$(BASEARCH)
+REPODATA=$(UPDATES)/repodata
 
-REPOMD_F=$(UPDATES)/repodata/repomd.xml
-UPDATEINFO_F=$(UPDATES)/repodata/updateinfo.xml.gz
+REPOMD_F=$(REPODATA)/repomd.xml
+UPDATEINFO_F=$(REPODATA)/updateinfo.xml.gz
+
+SED_EXPR='s^.*href="repodata/\(\w\+-updateinfo\.xml\.gz\)".*^\1\n^p'
 
 #------------------------------------------------------------------------------
 
-.PHONY: usage
+.PHONY: usage lget rget list rsync check resolve lsync lupdate parse
+
 usage:
 	$(info "Usage: make lget|rget|list|rsync|check|resolve|lsync|lupdate|parse")
 
-.PHONY: lget
 lget:
-#	rpm -qa --qf "%{NAME}|%{ARCH}|%{VERSION}|%{RELEASE}\n" | sort
 	@./fedora_do.py $@
 
 $(REPOMD_F):
-	wget -N -P $(UPDATES)/repodata $(REMOTE)/$@
+	wget -N -P $(REPODATA) $(REMOTE)/$@
 
-$(UPDATEINFO_F):
-	wget -N -P $(UPDATES)/repodata $(REMOTE)/$@
+.PHONY: $(UPDATEINFO_F)
+$(UPDATEINFO_F): $(REPOMD_F)
+	$(eval UPDATEINFO_F=$(REPODATA)/$(shell sed -n $(SED_EXPR) $(REPOMD_F)))
+	wget -N -P $(REPODATA) $(REMOTE)/$(UPDATEINFO_F)
 
-.PHONY: rget
 rget: $(REPOMD_F) $(UPDATEINFO_F)
 
-.PHONY: list
 list: rget
 	@./fedora_do.py $@
 
-.PHONY: rsync
 rsync:
 	@./fedora_do.py list | while read line; do \
 	{ \
@@ -51,15 +52,12 @@ rsync:
 	}& \
 	done
 
-.PHONY: check
 check:
 	@./fedora_do.py $@
 
-.PHONY: resolve
 resolve:
 	@./fedora_do.py $@ | uniq | sort
 
-.PHONY: lsync
 lsync:
 	@if [ -d updates ]; then \
 		rm -rf $(LOCAL)/$(UPDATES)/repodata; \
@@ -69,11 +67,9 @@ lsync:
 		echo "The new updates has been moved to desination."; \
 	fi
 
-.PHONY: lupdate
 lupdate:
 	@./fedora_do.py $@
 
-.PHONY: parse
 parse:
 	@./fedora_do.py $@ | uniq | sort
 

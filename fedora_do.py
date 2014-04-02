@@ -31,14 +31,16 @@ RELEASES_D = os.path.join(
     'os'
 )
 
-UPDATEINFO_F = os.path.join(
+REPODATA_D = os.path.join(
     UPDATES_D,
     'repodata',
-    'updateinfo.xml.gz',
+)
+UPDATEINFO_F = os.path.join(
+    REPODATA_D,
+    'updateinfo.xml.gz', # Should be updated from repomd.xml
 )
 REPOMD_F = os.path.join(
-    UPDATES_D,
-    'repodata',
+    REPODATA_D,
     'repomd.xml',
 )
 
@@ -182,7 +184,24 @@ def check_env():
     if not os.path.exists(INSTALLED_DB_F):
         sys.exit("Missing installed.db file! Do 'lget' first!")
 
-    if not os.path.exists(UPDATEINFO_F) or not os.path.exists(REPOMD_F):
+    if not os.path.exists(REPOMD_F):
+        sys.exit("Do 'rget' first!")
+
+    global UPDATEINFO_F
+    xmlfile = open(REPOMD_F)
+    dom = xml.dom.minidom.parse(xmlfile)
+    href = ''
+    for node in dom.getElementsByTagName('location'):
+        h = node.getAttribute('href')
+        if 'updateinfo' in h:
+            href = h
+            break
+    xmlfile.close()
+    dom.unlink()
+    if href:
+        UPDATEINFO_F = os.path.join(UPDATES_D, href)
+
+    if not os.path.exists(UPDATEINFO_F):
         sys.exit("Do 'rget' first!")
 
 #-----------------------------------------------------------------------------
@@ -497,6 +516,7 @@ if __name__ == '__main__':
                 sys.exit('Fix the repodata first!')
 
     elif optype == 'resolve':
+        check_env()
         udb = get_upkgs_dict(UPDATEINFO_F, installed_db)
         uppkgs = [udb[p][1] for p in udb]
         req_list = []

@@ -9,7 +9,7 @@ lreplstf="local_rep.lst"
 rreplstf="remote_rep.lst"
 
 retrieve_rep_content () {
-	rsync -a --exclude=SRPMS/ --exclude=isos/ --exclude=i386/ $* | \
+	rsync -avPh --exclude=SRPMS/ --exclude=isos/ --exclude=i386/ $* | \
 	awk '{ printf "%s|%s|%s|%s\n", $5, $3, $4, $2 }' \
 	    - | \
 	sort
