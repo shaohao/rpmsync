@@ -25,6 +25,7 @@ usage:
 lget:
 	@./fedora_do.py $@
 
+.PHONY: $(REPOMD_F)
 $(REPOMD_F):
 	wget -N -P $(REPODATA) $(REMOTE)/$@
 
