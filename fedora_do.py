@@ -1,5 +1,4 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 import bz2
 import fnmatch
@@ -14,7 +13,7 @@ import xml.dom.minidom
 
 #------------------------------------------------------------------------------
 
-RELEASEVER = '20'
+RELEASEVER = '21'
 BASEARCH = 'x86_64'
 
 #------------------------------------------------------------------------------
@@ -47,7 +46,6 @@ REPOMD_F = os.path.join(
 DOWNLOAD_REPS = [UPDATES_D, RELEASES_D]
 
 INSTALLED_DB_F = 'installed.db'
-FEDORA_DB_F = '-'.join(('fedora', RELEASEVER, BASEARCH)) + '.db'
 EVERYTHING_DB_F = '-'.join(('everything', RELEASEVER, BASEARCH)) + '.db'
 UPDATES_DB_F = os.path.join(
     UPDATES_D,
@@ -169,7 +167,7 @@ def myshasum(ck_type, ifn, ck_method=CHECKSUM_METHOD):
         result = result.split(' ')[0]
     elif ck_method == 'lib':
         result = -1
-        with open(ifn) as f:
+        with open(ifn, 'rb') as f:
             sha = getattr(hashlib, ck_type)()
             sha.update(f.read())
             result = sha.hexdigest()
@@ -246,7 +244,10 @@ WHERE name=? AND arch=?
                             ),
                         )
                     fn_ele = node_pkg.getElementsByTagName('filename')[0]
-                    udb[(n, a)] = (new_ti, fn_ele.firstChild.data)
+                    fn_data = fn_ele.firstChild.data
+                    if fn_data[1] != '/': # support Fedroa21's updateinfo db
+                        fn_data = os.path.join(fn_data[0].lower(), fn_data)
+                    udb[(n, a)] = (new_ti, fn_data)
     xmlfile.close()
     dom.unlink()
     return udb
@@ -288,13 +289,13 @@ def check_repodata(idn, ifn):
         checksum_real = myshasum(checksum_type, rep_href)
 
         if checksum_real != checksum_exp:
-            print 'Checksum error on: %s' % rep_href
+            print('Checksum error on: {}'.format(rep_href))
             success = True
     dom.unlink()
     return success, pdbfn
 
 
-def check_pkgs(dlpkgs, installed_db, fedora_db, everything_db, update_db):
+def check_pkgs(dlpkgs, installed_db, everything_db, update_db):
     for lpkg in dlpkgs:
         pkg_from = UPDATES_D
         result = update_db.get_checksum_from_href(lpkg)
@@ -310,16 +311,16 @@ def check_pkgs(dlpkgs, installed_db, fedora_db, everything_db, update_db):
             ck, ck_type = result
             rck = myshasum(ck_type, lpkg_path, CHECKSUM_METHOD)
             if rck != ck:
-                print 'Checksum error on: %s' % lpkg_path
+                print('Checksum error on: {}'.format(lpkg_path))
         else:
-            print 'Unknown package: %s' % lpkg_path
+            print('Unknown package: {}'.format(lpkg_path))
 
 
 def resolve_package(
     pkg, dlpkgs,
     arches,
     installed_db,
-    fedora_db, everything_db,
+    everything_db,
     update_db,
     req_list,
 ):
@@ -347,8 +348,6 @@ def resolve_package(
         else:
             # Package is installed or included in iso
             if installed_db.get_pkg_count_from_navr(
-                name, arch, version, release
-            ) > 0 or fedora_db.get_pkg_count_from_navr(
                 name, arch, version, release
             ) > 0:
                 is_available = True
@@ -379,7 +378,7 @@ def resolve_package(
     # Get all hierarchical requires packages
     pkg_from, pkg_db = get_pkg_db_from_href(pkg)
     if not pkg_db:
-        print 'Unknown package: %s' % pkg
+        print('Unknown package: {}'.format(pkg))
         return
 
     pkg_reqs = [(pkg_from, pkg_db)]
@@ -475,7 +474,6 @@ if __name__ == '__main__':
 
     # Open db all
     installed_db = PackageDB(INSTALLED_DB_F)
-    fedora_db = PackageDB(FEDORA_DB_F)
     everything_db = PackageDB(EVERYTHING_DB_F)
     update_db = None
 
@@ -483,10 +481,10 @@ if __name__ == '__main__':
         check_env()
         udb = get_upkgs_dict(UPDATEINFO_F, installed_db)
         if len(udb):
-            for f in [udb[k][1] for k in sorted(udb.keys())] + [
-                x for x in get_repodata_list(REPOMD_F)
-            ]:
-                print os.path.join(UPDATES_D, f)
+            for f in [udb[k][1] for k in sorted(udb.keys())]:
+                print(os.path.join(UPDATES_D, f))
+            for f in [x for x in get_repodata_list(REPOMD_F)]:
+                print(os.path.join(UPDATES_D, f))
 
     elif optype == 'check':
         check_env()
@@ -502,14 +500,14 @@ if __name__ == '__main__':
                 bz2f = bz2.BZ2File(pdbfn)
                 bz2data = bz2f.read()
                 bz2f.close()
-                with open(UPDATES_DB_F, 'w') as tempfn:
+                with open(UPDATES_DB_F, 'wb') as tempfn:
                     tempfn.write(bz2data)
 
                 update_db = PackageDB(UPDATES_DB_F)
                 check_pkgs(
                     dlpkgs,
                     installed_db,
-                    fedora_db, everything_db,
+                    everything_db,
                     update_db,
                 )
             else:
@@ -528,15 +526,15 @@ if __name__ == '__main__':
                 pkg, uppkgs,
                 (BASEARCH, 'noarch', 'x86_64'),
                 installed_db,
-                fedora_db, everything_db,
+                everything_db,
                 update_db,
                 req_list,
             )
         for req in req_list:
-            print '{0} ==> {1}'.format(
+            print('{} ==> {}'.format(
                 os.path.join(req[0], req[1]),
                 req[2],
-            )
+            ))
 
     elif optype == 'lupdate':
         check_env()
@@ -564,7 +562,7 @@ if __name__ == '__main__':
                 pkg_from = RELEASES_D
 
             if not pkgs:
-                print 'Unknown package name. Please input a valid package name!'
+                print('Unknown package name. Please input a valid package name!')
             else:
                 # Filtering based on the arch
                 for pkg in pkgs:
@@ -576,17 +574,16 @@ if __name__ == '__main__':
                         href, dlpkgs,
                         arches,
                         installed_db,
-                        fedora_db, everything_db,
+                        everything_db,
                         update_db,
                         req_list,
                     )
                 for req in req_list:
-                    print os.path.join(req[0], req[1])
+                    print(os.path.join(req[0], req[1]))
 
     # Close db all
     if update_db:
         update_db.close()
     everything_db.close()
-    fedora_db.close()
     installed_db.close()
 

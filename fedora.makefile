@@ -1,6 +1,6 @@
 # vim:ts=4:sw=4
 
-RELEASEVER=20
+RELEASEVER=21
 BASEARCH=x86_64
 
 # HTTP URL for 'http' mode
@@ -46,7 +46,7 @@ rsync:
 		f=`basename $$line`; \
 		mkdir -p $$d; \
 		if [ ! -f $$line -o -f $$line.aria2 ]; then \
-			aria2c -R -s5 $(REMOTE)/$$line $(REMOTE_ALT)/$$line --dir=$$d; \
+			aria2c -R -s5 $(REMOTE_ALT)/$$line $(REMOTE)/$$line --dir=$$d; \
 		else \
 			echo "$$f exists, skipping..."; \
 		fi \
