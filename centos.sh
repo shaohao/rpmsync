@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ver=6
+ver=7
 rrepurl=msync.centos.org::CentOS/$ver/
 #rrepurl=rsync://rsync.arcticnetwork.ca/centos/$ver/
 dlurl=http://msync.centos.org/centos

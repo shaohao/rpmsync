@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import bz2
 import fnmatch
 import gzip
 import hashlib
+import lzma
 import os
 from subprocess import Popen, PIPE
 import sys
@@ -13,7 +13,7 @@ import xml.dom.minidom
 
 #------------------------------------------------------------------------------
 
-RELEASEVER = '21'
+RELEASEVER = '22'
 BASEARCH = 'x86_64'
 
 #------------------------------------------------------------------------------
@@ -186,18 +186,17 @@ def check_env():
         sys.exit("Do 'rget' first!")
 
     global UPDATEINFO_F
-    xmlfile = open(REPOMD_F)
-    dom = xml.dom.minidom.parse(xmlfile)
-    href = ''
-    for node in dom.getElementsByTagName('location'):
-        h = node.getAttribute('href')
-        if 'updateinfo' in h:
-            href = h
-            break
-    xmlfile.close()
-    dom.unlink()
-    if href:
-        UPDATEINFO_F = os.path.join(UPDATES_D, href)
+    with open(REPOMD_F) as xmlfile:
+        dom = xml.dom.minidom.parse(xmlfile)
+        href = ''
+        for node in dom.getElementsByTagName('location'):
+            h = node.getAttribute('href')
+            if 'updateinfo' in h:
+                href = h
+                break
+        dom.unlink()
+        if href:
+            UPDATEINFO_F = os.path.join(UPDATES_D, href)
 
     if not os.path.exists(UPDATEINFO_F):
         sys.exit("Do 'rget' first!")
@@ -255,12 +254,11 @@ WHERE name=? AND arch=?
 
 def get_repodata_list(ifn):
     # Open the gziped xml file
-    xmlfile = open(ifn)
-    dom = xml.dom.minidom.parse(xmlfile)
-    for node in dom.getElementsByTagName('location'):
-        yield node.getAttribute('href')
-    xmlfile.close()
-    dom.unlink()
+    with open(ifn) as xmlfile:
+        dom = xml.dom.minidom.parse(xmlfile)
+        for node in dom.getElementsByTagName('location'):
+            yield node.getAttribute('href')
+        dom.unlink()
     # repomd.xml file
     yield 'repodata/repomd.xml'
 
@@ -497,11 +495,10 @@ if __name__ == '__main__':
             )
             # Check downloaded updating package
             if success and pdbfn:
-                bz2f = bz2.BZ2File(pdbfn)
-                bz2data = bz2f.read()
-                bz2f.close()
+                with lzma.open(pdbfn) as xzf:
+                    xzdata = xzf.read()
                 with open(UPDATES_DB_F, 'wb') as tempfn:
-                    tempfn.write(bz2data)
+                    tempfn.write(xzdata)
 
                 update_db = PackageDB(UPDATES_DB_F)
                 check_pkgs(
