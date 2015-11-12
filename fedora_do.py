@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import fnmatch
-import gzip
 import hashlib
 import lzma
 import os
@@ -13,7 +12,7 @@ import xml.dom.minidom
 
 #------------------------------------------------------------------------------
 
-RELEASEVER = '22'
+RELEASEVER = '23'
 BASEARCH = 'x86_64'
 
 #------------------------------------------------------------------------------
@@ -36,7 +35,7 @@ REPODATA_D = os.path.join(
 )
 UPDATEINFO_F = os.path.join(
     REPODATA_D,
-    'updateinfo.xml.gz', # Should be updated from repomd.xml
+    'updateinfo.xml.xz', # Should be updated from repomd.xml
 )
 REPOMD_F = os.path.join(
     REPODATA_D,
@@ -207,7 +206,7 @@ def check_env():
 def get_upkgs_dict(ifn, installed_db, lupdate=False):
     udb = {}
     # Open the gziped xml file
-    xmlfile = gzip.open(ifn)
+    xmlfile = lzma.open(ifn)
     dom = xml.dom.minidom.parse(xmlfile)
     # Update all packages based on each issue
     for node_issued in dom.getElementsByTagName('issued'):
@@ -253,7 +252,7 @@ WHERE name=? AND arch=?
 
 
 def get_repodata_list(ifn):
-    # Open the gziped xml file
+    # Open the xml file
     with open(ifn) as xmlfile:
         dom = xml.dom.minidom.parse(xmlfile)
         for node in dom.getElementsByTagName('location'):

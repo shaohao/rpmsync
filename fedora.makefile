@@ -1,6 +1,6 @@
 # vim:ts=4:sw=4
 
-RELEASEVER=22
+RELEASEVER=23
 BASEARCH=x86_64
 
 # HTTP URL for 'http' mode
@@ -12,9 +12,9 @@ UPDATES=updates/$(RELEASEVER)/$(BASEARCH)
 REPODATA=$(UPDATES)/repodata
 
 REPOMD_F=$(REPODATA)/repomd.xml
-UPDATEINFO_F=$(REPODATA)/updateinfo.xml.gz
+UPDATEINFO_F=$(REPODATA)/updateinfo.xml.xz
 
-SED_EXPR='s^.*href="repodata/\(\w\+-updateinfo\.xml\.gz\)".*^\1\n^p'
+SED_EXPR='s^.*href="repodata/\(\w\+-updateinfo\.xml\.xz\)".*^\1\n^p'
 
 #------------------------------------------------------------------------------
 
