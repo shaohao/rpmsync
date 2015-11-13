@@ -65,13 +65,12 @@ class PackageDB(object):
         self.con = sqlite3.connect(db_fn)
         # Use row plugin in
         self.con.row_factory = sqlite3.Row
-        self.cur = self.con.cursor()
 
     def execute(self, *args, **kwargs):
-        self.cur.execute(*args, **kwargs)
+        self.con.execute(*args, **kwargs)
 
     def fetchone(self):
-        return self.cur.fetchone()
+        return self.con.fetchone()
 
     def commit(self):
         self.con.commit()
@@ -80,80 +79,80 @@ class PackageDB(object):
         self.con.close()
 
     def get_href_from_namearch(self, name, arches):
-        self.cur.execute('''
+        cur = self.con.execute('''
 SELECT location_href
 FROM   packages
 WHERE  name=? AND arch in %s
 ''' % str(arches),
             (name,),
         )
-        results = self.cur.fetchall()
+        results = cur.fetchall()
         return [r['location_href'] for r in results]
 
     def get_buildtime_from_namearch(self, name, arch):
         '''
         Get time build from name and arch
         '''
-        self.cur.execute('''
+        cur = self.con.execute('''
 SELECT time_build
 FROM   packages
 WHERE  name=? AND arch=?
 ''',
             (name, arch),
         )
-        results = self.cur.fetchall()
+        results = cur.fetchall()
         return results[0] if results else None
 
     def get_pkg_count_from_navr(self, name, arch, version, release):
-        self.cur.execute('''
+        cur = self.con.execute('''
 SELECT count(*)
 FROM   packages
 WHERE  name=? AND version=? AND release=? AND arch=?
 ''',
             (name, version, release, arch),
         )
-        return self.cur.fetchall()[0][0]
+        return cur.fetchall()[0][0]
 
     def get_checksum_from_href(self, href):
-        self.cur.execute('''
+        cur = self.con.execute('''
 SELECT pkgId, checksum_type
 FROM   packages
 WHERE  location_href=?
 ''',
             (href,),
         )
-        results = self.cur.fetchall()
+        results = cur.fetchall()
         return results[0] if results else None
 
     def get_requires_from_href(self, href):
-        self.cur.execute('''
+        cur = self.con.execute('''
 SELECT requires.name
 FROM   requires INNER JOIN packages ON requires.pkgKey=packages.pkgKey
 WHERE  packages.location_href=?
 ''',
             (href,),
         )
-        return [r['name'] for r in self.cur.fetchall()]
+        return [r['name'] for r in cur.fetchall()]
 
     def get_packages_from_provide(self, prov, arches):
-        self.cur.execute('''
+        cur = self.con.execute('''
 SELECT packages.*
 FROM   provides INNER JOIN packages ON provides.pkgKey=packages.pkgKey
 WHERE  provides.name=? AND packages.arch in %s
 ''' % str(arches),
             (prov,),
         )
-        return self.cur.fetchall()
+        return cur.fetchall()
 
     def get_info_from_href(self, href):
-        self.cur.execute('''
+        cur = self.con.execute('''
 SELECT *
 FROM packages
 WHERE location_href=?
 ''',
             (href,),
         )
-        results = self.cur.fetchall()
+        results = cur.fetchall()
         return results[0] if results else None
 
 #-----------------------------------------------------------------------------
@@ -397,6 +396,17 @@ def update_lpkgs_db(installed_db):
     except:
         sys.exit('Make sure the rpm-python package has been installed!')
 
+    def get_rpm_record(h):
+        n = h[rpm.RPMTAG_NAME].decode()
+        v = h[rpm.RPMTAG_VERSION].decode()
+        r = h[rpm.RPMTAG_RELEASE].decode()
+        try:
+            a = h[rpm.RPMTAG_ARCH].decode()
+        except:
+            a = ''
+        t = h[rpm.RPMTAG_BUILDTIME]
+        return (n,v,r,a,t)
+
     # Clear the old database
     try:
         installed_db.execute('DELETE FROM packages')
@@ -405,45 +415,15 @@ def update_lpkgs_db(installed_db):
 
     # Create a new database
     try:
-        installed_db.execute('''
-CREATE TABLE packages (
-    name TEXT,
-    version TEXT,
-    release TEXT,
-    arch TEXT,
-    time_build INTEGER
-)
-''',
-        )
-        installed_db.execute(
-            'CREATE INDEX packagename ON packages (name)',
-        )
-        installed_db.execute(
-            'CREATE INDEX packagearch ON packages (arch)',
-        )
+        installed_db.execute('CREATE TABLE packages ( name TEXT, version TEXT, release TEXT, arch TEXT, time_build INTEGER )')
+        installed_db.execute('CREATE INDEX packagename ON packages (name)')
+        installed_db.execute('CREATE INDEX packagearch ON packages (arch)')
     except:
         pass
 
     ts = rpm.TransactionSet()
-    mi = ts.dbMatch()
-    for h in mi:
-        installed_db.execute('''
-INSERT INTO packages VALUES(
-    :name,
-    :version,
-    :release,
-    :arch,
-    :time_build
-)
-''',
-            {
-                'name': h[rpm.RPMTAG_NAME],
-                'version': h[rpm.RPMTAG_VERSION],
-                'release': h[rpm.RPMTAG_RELEASE],
-                'arch': h[rpm.RPMTAG_ARCH],
-                'time_build': h[rpm.RPMTAG_BUILDTIME],
-            },
-        )
+    records = [get_rpm_record(h) for h in ts.dbMatch()]
+    installed_db.executemany('INSERT INTO packages VALUES (?,?,?,?,?)', records)
 
 
 def get_all_dl_pkgs():
