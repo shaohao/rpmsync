@@ -69,6 +69,9 @@ class PackageDB(object):
     def execute(self, *args, **kwargs):
         self.con.execute(*args, **kwargs)
 
+    def executemany(self, *args, **kwargs):
+        self.con.executemany(*args, **kwargs)
+
     def fetchone(self):
         return self.con.fetchone()
 

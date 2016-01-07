@@ -7,7 +7,7 @@ BASEARCH=x86_64
 REMOTE=http://dl.fedoraproject.org/pub/fedora/linux
 REMOTE_FAST=http://mirror.neu.edu.cn/fedora/linux
 REMOTE_ALT={http://mirrors.163.com/fedora,http://mirrors.sohu.com/fedora,http://mirrors.kernel.org/fedora}
-LOCAL=~ftp/pub/fedora/linux
+LOCAL=~/Repos/pub/fedora/linux
 UPDATES=updates/$(RELEASEVER)/$(BASEARCH)
 REPODATA=$(UPDATES)/repodata
 
@@ -65,7 +65,7 @@ lsync:
 		rm -rf $(LOCAL)/$(UPDATES)/repodata; \
 		find updates -type f | xargs chmod 644; \
 		find updates -type d | xargs chmod 755; \
-		mv $(UPDATES)/* $(LOCAL)/$(UPDATES); \
+		rsync -avPh $(UPDATES)/* $(LOCAL)/$(UPDATES); \
 		echo "The new updates has been moved to desination."; \
 	fi
 
