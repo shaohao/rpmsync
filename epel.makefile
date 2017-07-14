@@ -1,20 +1,20 @@
 # vim:ts=4:sw=4
 
 VER?=7
-MOD?=updates
+MOD?=x86_64
 JOBS?=20
 
-RREPO=rsync://mirrors.kernel.org/centos
-#RREPO=rsync://mirrors.yun-idc.com/centos
-#RREPO=msync.centos.org::CentOS
-#RREPO=rsync://rsync.arcticnetwork.ca/centos
-#RREPO=rsync://mirrros.tuna.tsinghua.edu.cn/centos
-DLREPO={http://mirrors.aliyun.com/centos,http://msync.centos.org/centos}
-LREPO=centos
+RREPO=rsync://mirrors.kernel.org/fedora-epel
+#RREPO=rsync://mirrors.yun-idc.com/fedora-epel
+#RREPO=msync.fedora-epel.org::CentOS
+#RREPO=rsync://rsync.arcticnetwork.ca/fedora-epel
+#RREPO=rsync://mirrros.tuna.tsinghua.edu.cn/fedora-epel
+DLREPO={http://mirrors.aliyun.com/epel,http://mirrors.kernel.org/fedora-epel}
+LREPO=fedora-epel
 
-RSYNC=rsync -avPh --no-motd --exclude=SRPMS/ --exclude=drpms/ --exclude=i386/
+RSYNC=rsync -avPh --no-motd --exclude=SRPMS/ --exclude=drpms/ --exclude=i386/ --exclude=debug/
 
-TMP_LST=/tmp/centos-$(VER)-$(MOD)-pkgs.lst
+TMP_LST=/tmp/fedora-epel-$(VER)-$(MOD)-pkgs.lst
 
 #------------------------------------------------------------------------------
 

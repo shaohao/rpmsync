@@ -1,11 +1,5 @@
 centos/
-updates/
-updates
-releases/
-releases
-20*/
-20*.*
+*epel/
 Makefile
 *.iso
 ~*.*
-*.db
